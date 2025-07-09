@@ -17,7 +17,7 @@ server.registerTool(
     'run-jest',
     {
         title: 'Jest',
-        description: 'Run jest tests in a directory, with an optional test pattern which matches the test file path.',
+        description: 'Run jest tests for a project, with an optional test pattern which matches the test file path.',
         inputSchema: {
             rootDir: z.string(),
             testFilePattern: z.string().optional(),
