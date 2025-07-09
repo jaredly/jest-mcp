@@ -44,7 +44,7 @@ process.on('message', async ({cwd, testPattern}) => {
     } catch (err) {
         return process.send?.({
             type: 'text',
-            text: `Error running jest: ${err.message}`,
+            text: `Error running jest: ${(err as Error).message}`,
         });
     }
 });

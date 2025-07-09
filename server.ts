@@ -1,10 +1,11 @@
 #!/usr/bin/env fnm exec --using 24 node
-import {McpServer, ResourceTemplate} from '@modelcontextprotocol/sdk/server/mcp.js';
+import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
-import {runCLI} from 'jest';
-import {z} from 'zod';
+import {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 import {fork} from 'child_process';
-import {resolve} from 'path';
+import {z} from 'zod';
+
+const __dirname = import.meta.dirname;
 
 // Create an MCP server
 const server = new McpServer({
@@ -17,17 +18,16 @@ server.registerTool(
     'run-jest',
     {
         title: 'Jest',
-        description: 'Run jest tests in a directory, with an optional test pattern',
+        description: 'Run jest tests in a directory, with an optional test pattern which matches the test file path',
         inputSchema: {cwd: z.string(), testPattern: z.string().optional()},
     },
     async ({cwd, testPattern}) => {
         return new Promise((res) => {
-            console.log('forking');
-            const child = fork(resolve('./child-jest.ts'), [], {
+            const child = fork(__dirname + '/child-jest.ts', [], {
                 stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
             });
 
-            const out = [];
+            const out: CallToolResult['content'] = [];
             child.stdout?.setEncoding('utf8');
             child.stdout?.on('data', (data) => {
                 out.push({type: 'text', text: `stdout: ${data.trim()}`});
@@ -44,7 +44,7 @@ server.registerTool(
 
             // happy path, no need to bother with stdout/stderr
             child.on('message', (message) => {
-                res({content: [message]});
+                res({content: [message as CallToolResult['content'][0]]});
                 child.kill();
             });
 
@@ -74,37 +74,6 @@ server.registerTool(
                 });
             });
         });
-
-        // process.chdir(cwd);
-        // const result = await runCLI(
-        //     {
-        //         _: testPattern ? [testPattern] : [],
-        //         coverage: true,
-        //         json: true,
-        //         $0: 'jest-mcp',
-        //         runInBand: true,
-        //         // testNamePattern: testPattern ? testPattern : undefined,
-        //         silent: true,
-        //         rootDir: cwd,
-        //     },
-        //     [cwd],
-        // );
-
-        // const {results} = result;
-        // return {
-        //     content: [
-        //         {
-        //             type: 'text',
-        //             text: JSON.stringify({
-        //                 success: results.success,
-        //                 numPassedTests: results.numPassedTests,
-        //                 numFailedTests: results.numFailedTests,
-        //                 testResults: results.testResults,
-        //                 coverageMap: results.coverageMap,
-        //             }),
-        //         },
-        //     ],
-        // };
     },
 );
 
