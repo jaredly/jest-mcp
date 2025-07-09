@@ -1,7 +1,6 @@
-#!/usr/bin/env fnm exec --using 24 node
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
-import {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
+import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 import {fork} from 'child_process';
 import {z} from 'zod';
 
