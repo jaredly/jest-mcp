@@ -1,33 +1,33 @@
 import {existsSync, statSync} from 'fs';
 import {runCLI} from 'jest';
 
-process.on('message', async ({cwd, testPattern}) => {
-    if (!existsSync(cwd)) {
+process.on('message', async ({rootDir, testFilePattern, includeCoverage}) => {
+    if (!existsSync(rootDir)) {
         return process.send?.({
             type: 'text',
-            text: `Error: ${cwd} does not exist`,
+            text: `Error: ${rootDir} does not exist`,
         });
     }
-    if (!statSync(cwd).isDirectory()) {
+    if (!statSync(rootDir).isDirectory()) {
         return process.send?.({
             type: 'text',
-            text: `Error: ${cwd} is not a directory`,
+            text: `Error: ${rootDir} is not a directory`,
         });
     }
-    process.chdir(cwd);
+    process.chdir(rootDir);
     try {
         const result = await runCLI(
             {
-                _: testPattern ? [testPattern] : [],
-                coverage: true,
+                _: testFilePattern ? [testFilePattern] : [],
+                coverage: !!includeCoverage,
                 json: true,
                 $0: 'jest-mcp',
                 runInBand: true,
-                // testNamePattern: testPattern ? testPattern : undefined,
+                // testNamePattern: testFilePattern ? testFilePattern : undefined,
                 silent: true,
-                rootDir: cwd,
+                rootDir: rootDir,
             },
-            [cwd],
+            [rootDir],
         );
 
         const {results} = result;
@@ -38,7 +38,7 @@ process.on('message', async ({cwd, testPattern}) => {
                 numPassedTests: results.numPassedTests,
                 numFailedTests: results.numFailedTests,
                 testResults: results.testResults,
-                coverageMap: results.coverageMap,
+                coverageMap: includeCoverage ? results.coverageMap : undefined,
             }),
         });
     } catch (err) {

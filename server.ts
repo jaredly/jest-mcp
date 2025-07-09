@@ -17,13 +17,20 @@ server.registerTool(
     'run-jest',
     {
         title: 'Jest',
-        description: 'Run jest tests in a directory, with an optional test pattern which matches the test file path',
-        inputSchema: {cwd: z.string(), testPattern: z.string().optional()},
+        description: 'Run jest tests in a directory, with an optional test pattern which matches the test file path.',
+        inputSchema: {
+            rootDir: z.string(),
+            testFilePattern: z.string().optional(),
+            includeCoverage: z.boolean().optional(),
+        },
     },
-    async ({cwd, testPattern}) => {
+    async ({rootDir, includeCoverage, testFilePattern}) => {
         return new Promise((res) => {
             const child = fork(__dirname + '/child-jest.ts', [], {
                 stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+                env: {
+                    NODE_ENV: 'test',
+                },
             });
 
             const out: CallToolResult['content'] = [];
@@ -39,7 +46,7 @@ server.registerTool(
                 out.push({type: 'text', text: `stderr: ${data.trim()}`});
             });
 
-            child.send({cwd, testPattern});
+            child.send({rootDir, testFilePattern, includeCoverage});
 
             // happy path, no need to bother with stdout/stderr
             child.on('message', (message) => {
